@@ -1,3 +1,5 @@
+-- Initialize table schemas
+
 CREATE TABLE product (
  id SERIAL,
  name TEXT,
@@ -61,8 +63,28 @@ CREATE TABLE characteristic_reviews (
 
 ALTER TABLE characteristic_reviews ADD CONSTRAINT characteristic_reviews_pkey PRIMARY KEY (id);
 
+-- Add foreign keys to tables
+
 ALTER TABLE reviews ADD CONSTRAINT reviews_product_id_fkey FOREIGN KEY (product_id) REFERENCES product(id);
 ALTER TABLE reviews_photos ADD CONSTRAINT reviews_photos_review_id_fkey FOREIGN KEY (review_id) REFERENCES reviews(id);
 ALTER TABLE characteristics ADD CONSTRAINT characteristics_product_id_fkey FOREIGN KEY (product_id) REFERENCES product(id);
 ALTER TABLE characteristic_reviews ADD CONSTRAINT characteristic_reviews_characteristic_id_fkey FOREIGN KEY (characteristic_id) REFERENCES characteristics(id);
 ALTER TABLE characteristic_reviews ADD CONSTRAINT characteristic_reviews_review_id_fkey FOREIGN KEY (review_id) REFERENCES reviews(id);
+
+-- Import data using 'copy' command
+-- copy product from '/Users/bishalgautam/Desktop/2021/Hack Reactor/SDC/product.csv' DELIMITER ',' CSV HEADER;
+-- copy characteristics (id, product_id, name) from '/Users/bishalgautam/Desktop/2021/Hack Reactor/SDC/characteristics.csv' DELIMITER ',' CSV HEADER;
+-- copy reviews (id, product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, response, helpfulness) from '/Users/bishalgautam/Desktop/2021/Hack Reactor/SDC/reviews.csv' DELIMITER ',' CSV HEADER;
+-- copy characteristic_reviews (id, characteristic_id, review_id, value) from '/Users/bishalgautam/Desktop/2021/Hack Reactor/SDC/characteristic_reviews.csv' DELIMITER ',' CSV HEADER;
+-- copy reviews_photos (id, review_id, url) from '/Users/bishalgautam/Desktop/2021/Hack Reactor/SDC/reviews_photos.csv' DELIMITER ',' CSV HEADER;
+copy product from '/Users/dhoaintloyal/HackReactor/SEI/Capstones/System-Design-Capstone/Data/Used/product.csv' DELIMITER ',' CSV HEADER;
+copy reviews from '/Users/dhoaintloyal/HackReactor/SEI/Capstones/System-Design-Capstone/Data/Used/reviews.csv' DELIMITER ',' CSV HEADER;
+copy reviews_photos from '/Users/dhoaintloyal/HackReactor/SEI/Capstones/System-Design-Capstone/Data/Used/reviews_photos.csv' DELIMITER ',' CSV HEADER;
+copy characteristics from '/Users/dhoaintloyal/HackReactor/SEI/Capstones/System-Design-Capstone/Data/Used/characteristics.csv' DELIMITER ',' CSV HEADER;
+copy characteristic_reviews from '/Users/dhoaintloyal/HackReactor/SEI/Capstones/System-Design-Capstone/Data/Used/characteristic_reviews.csv' DELIMITER ',' CSV HEADER;
+
+-- Change 'date' format from bigint to timestamp w/ timezone for Reviews table
+ALTER TABLE reviews
+ALTER COLUMN date SET DATA TYPE timestamp with time zone
+USING
+timestamp with time zone 'epoch' + date * interval '1 millisecond';
