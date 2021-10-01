@@ -13,3 +13,5 @@ a.out
 
 # Add /node_modules/ to git_ignore
 node_modules/
+
+.DS_Store

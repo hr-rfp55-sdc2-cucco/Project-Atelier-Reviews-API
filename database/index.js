@@ -12,14 +12,23 @@ const getHome = (callback) => {
   pool.query(psqlStatement, callback);
 };
 
-const getReviews = (reviewsParams, callback) => {
-  console.log(reviewsParams);
-  const psqlStatement = 'SELECT NOW()';
+const getReviews = (params, callback) => {
+  console.log(params);
+  const psqlStatement = 'SELECT ';
   pool.query(psqlStatement, callback);
 };
 
-const getReviewMeta = (callback) => {
-  const psqlStatement = 'SELECT NOW()';
+const getReviewMeta = (params, callback) => {
+  const psqlStatement = `SELECT
+  product.id,
+  reviews.rating,
+  COUNT(*)
+  FROM product
+  INNER JOIN reviews
+  ON product.id = reviews.product_id
+  WHERE product.id = ${params[0]}
+  GROUP BY 1,2
+  ORDER BY 1,2`;
   pool.query(psqlStatement, callback);
 };
 
@@ -46,6 +55,7 @@ module.exports = {
   updateReview,
   reportReview,
 };
+
 
 // module.exports = {
 //   query: (text, params, callback) => pool.query(text, params, callback),
