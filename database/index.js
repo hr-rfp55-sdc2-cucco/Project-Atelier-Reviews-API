@@ -34,7 +34,7 @@ const getReviews = (params, callback) => {
   pool.query(psqlStatement, callback);
 };
 
-const getReviewMetaRatings = (params, callback) => {
+const getReviewMetaRatings = (params) => {
   const psqlStatement = `SELECT
   json_object_agg(results.rating, results.count) AS ratings
   FROM
@@ -45,10 +45,10 @@ const getReviewMetaRatings = (params, callback) => {
   GROUP BY 1
   ORDER BY 1) results
   `;
-  pool.query(psqlStatement, callback);
+  return pool.query(psqlStatement);
 };
 
-const getReviewMetaRecs = (params, callback) => {
+const getReviewMetaRecs = (params) => {
   const psqlStatement = `SELECT
   json_build_object
     (
@@ -59,10 +59,10 @@ const getReviewMetaRecs = (params, callback) => {
   WHERE reviews.product_id = ${params[0]}
   GROUP BY reviews.product_id
   `;
-  pool.query(psqlStatement, callback);
+  return pool.query(psqlStatement);
 };
 
-const getReviewMetaChar = (params, callback) => {
+const getReviewMetaChar = (params) => {
   const psqlStatement = `SELECT
   json_object_agg(results.name, results.json_build_object) AS characteristics FROM
   (SELECT
@@ -77,7 +77,7 @@ const getReviewMetaChar = (params, callback) => {
   characteristics.product_id,
   characteristics.id) results
   `;
-  pool.query(psqlStatement, callback);
+  return pool.query(psqlStatement);
 };
 
 const postReview = (callback) => {

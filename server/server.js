@@ -41,8 +41,23 @@ app.get('/reviews', (req, res) => {
 app.get('/reviews/meta', (req, res) => {
   const productId = req.query.product_id;
   const params = [Number.parseInt(productId, 10)];
-  const dbQueries = [db.getReviewMetaRatings, db.getReviewMetaRecs, db.getReviewMetaChar];
-  const data = [];
+  Promise.all([db.getReviewMetaRatings(params),
+    db.getReviewMetaRecs(params),
+    db.getReviewMetaChar(params)])
+    .then((result) => {
+      // console.log('result', result[0].rows, result[1].rows, result[2].rows);
+      const reviewMeta = {
+        product_id: productId,
+        ratings: result[0].rows[0].ratings,
+        recommended: result[1].rows[0].recommended,
+        characteristics: result[2].rows[0].characteristics,
+      };
+      res.status(200).send(reviewMeta);
+    })
+    .catch((err) => {
+      console.log('error', err);
+      res.status(404).send(err);
+    });
 });
 
 app.post('/reviews', (req, res) => {
