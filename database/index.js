@@ -102,7 +102,13 @@ const getReviewMetaChar = (params) => {
 };
 
 const postReview = (params, callback) => {
-  const psqlStatement = 'SELECT NOW()';
+  console.log('postReview params', params);
+  // reviews (product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, response, helpfulness)
+
+  const psqlStatement = `INSERT INTO
+  reviews
+  VALUES (5380375, ${params.product_id}, ${params.rating}, NOW(), ${params.summary}, ${params.body}, ${params.recommend}, false, ${params.name}, ${params.email}, null, 0)
+  `;
   pool.query(psqlStatement, callback);
 };
 

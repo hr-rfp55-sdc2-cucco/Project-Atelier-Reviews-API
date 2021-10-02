@@ -69,35 +69,15 @@ app.get('/reviews/meta', (req, res) => {
 });
 
 app.post('/reviews', (req, res) => {
-  console.log('post reviews req.query', req.query);
-  const productId = Number.parseInt(req.query.product_id, 10);
-  const rating = Number.parseInt(req.query.rating, 10);
-  const summary = req.query.summary;
-  const body = req.query.body;
-  const recommend = JSON.parse(req.query.recommend);
-  const name = req.query.name;
-  const email = req.query.email;
-  const photos = JSON.parse(req.query.photos) || [];
-  const characteristics = JSON.parse(req.query.characteristics) || {};
-  const paramsObj = {
-    productId,
-    rating,
-    summary,
-    body,
-    recommend,
-    name,
-    email,
-    photos,
-    characteristics,
-  };
-  // console.log('post reviews paramsObj', paramsObj);
-  // db.postReview(reviewsParams, (err, result) => {
-  //   if (err) {
-  //     res.status(404).send(err);
-  //   } else {
-  //     res.status(201).send(result.rows);
-  //   }
-  // });
+  // console.log('post reviews req.body', req.body);
+  // What if we don't supply photos or characteristics?
+  db.postReview(req.body, (err, result) => {
+    if (err) {
+      res.status(404).send(err);
+    } else {
+      res.status(201).send(result.rows);
+    }
+  });
 });
 
 app.put('/reviews/:review_id/helpful', (req, res) => {
