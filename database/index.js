@@ -34,8 +34,37 @@ const getReviews = (params, callback) => {
   pool.query(psqlStatement, callback);
 };
 
+const getReviewMetaRatings = (params, callback) => {
+  const psqlStatement = `SELECT
+  json_object_agg(results.rating, results.count) AS ratings
+  FROM
+  (SELECT reviews.rating,
+  COUNT(*)
+  FROM reviews
+  WHERE product_id = ${params[0]}
+  GROUP BY 1
+  ORDER BY 1) results
+  `;
+  pool.query(psqlStatement, callback);
+};
+
+const getReviewMetaRecs = (params, callback) => {
+  const psqlStatement = `SELECT
+  json_build_object
+    (
+    'false', SUM(CASE WHEN "recommend" = false THEN 1 ELSE 0 END),
+    'true', SUM(CASE WHEN "recommend" = true THEN 1 ELSE 0 END)
+    ) AS recommended
+  FROM reviews
+  WHERE reviews.product_id = ${params[0]}
+  GROUP BY reviews.product_id
+  `;
+  pool.query(psqlStatement, callback);
+};
+
 const getReviewMetaChar = (params, callback) => {
-  const psqlStatement = `SELECT json_object_agg(results.name, results.json_build_object) as characteristics from
+  const psqlStatement = `SELECT
+  json_object_agg(results.name, results.json_build_object) AS characteristics FROM
   (SELECT
   characteristics.product_id as product_id,
   characteristics.name,
@@ -47,30 +76,6 @@ const getReviewMetaChar = (params, callback) => {
   GROUP BY
   characteristics.product_id,
   characteristics.id) results
-  `;
-  pool.query(psqlStatement, callback);
-};
-
-const getReviewMetaRecs = (params, callback) => {
-  const psqlStatement = `SELECT
-  sum(case when "recommend" = false then 1 else 0 end) AS false,
-  sum(case when "recommend" = true then 1 else 0 end) AS true
-  FROM product
-  INNER JOIN reviews
-  ON product.id = reviews.product_id
-  WHERE product.id = ${params[0]}
-  `;
-  pool.query(psqlStatement, callback);
-};
-
-const getReviewMetaRatings = (params, callback) => {
-  const psqlStatement = `SELECT json_object_agg(results.rating, results.count) as ratings from
-  (SELECT reviews.rating,
-  COUNT(*)
-  FROM reviews
-  WHERE product_id = ${params[0]}
-  GROUP BY 1
-  ORDER BY 1) results
   `;
   pool.query(psqlStatement, callback);
 };
