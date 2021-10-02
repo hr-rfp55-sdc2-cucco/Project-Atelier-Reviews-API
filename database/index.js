@@ -36,7 +36,9 @@ const getReviews = (params, callback) => {
 
 const getReviewMetaRatings = (params) => {
   const psqlStatement = `SELECT
-  json_object_agg(results.rating, results.count) AS ratings
+  json_object_agg(
+    to_char(results.rating, 'FM9'),
+    to_char(results.count, 'FM9')) AS ratings
   FROM
   (SELECT reviews.rating,
   COUNT(*)
@@ -50,11 +52,10 @@ const getReviewMetaRatings = (params) => {
 
 const getReviewMetaRecs = (params) => {
   const psqlStatement = `SELECT
-  json_build_object
-    (
-    'false', SUM(CASE WHEN "recommend" = false THEN 1 ELSE 0 END),
-    'true', SUM(CASE WHEN "recommend" = true THEN 1 ELSE 0 END)
-    ) AS recommended
+  json_build_object(
+  'false', to_char(SUM(CASE WHEN "recommend" = false THEN 1 ELSE 0 END), 'FM9'),
+  'true', to_char(SUM(CASE WHEN "recommend" = true THEN 1 ELSE 0 END), 'FM9')
+  ) AS recommended
   FROM reviews
   WHERE reviews.product_id = ${params[0]}
   GROUP BY reviews.product_id
@@ -63,12 +64,11 @@ const getReviewMetaRecs = (params) => {
 };
 
 const getReviewMetaChar = (params) => {
-  const psqlStatement = `SELECT
-  json_object_agg(results.name, results.json_build_object) AS characteristics FROM
+  const psqlStatement = `SELECT json_object_agg(results.name, results.json_build_object) AS characteristics FROM
   (SELECT
   characteristics.product_id as product_id,
   characteristics.name,
-  json_build_object('id', characteristics.id, 'value', AVG(characteristic_reviews.value))
+  json_build_object('id', characteristics.id, 'value', to_char(AVG(characteristic_reviews.value), 'FM9.0000000000000000'))
   FROM characteristics
   INNER JOIN characteristic_reviews
   ON characteristics.id = characteristic_reviews.characteristic_id
