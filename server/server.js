@@ -39,25 +39,10 @@ app.get('/reviews', (req, res) => {
 });
 
 app.get('/reviews/meta', (req, res) => {
-  console.log(req.query);
   const productId = req.query.product_id;
   const params = [Number.parseInt(productId, 10)];
-  db.getReviewMeta(params, (err, result) => {
-    if (err) {
-      // console.log(err);
-      res.status(404).send(err);
-    } else {
-      // console.log('yay', result);
-      const responseObj = {
-        product_id: productId,
-        ratings: {},
-        recommended: {},
-        characteristics: {},
-        results: result.rows,
-      };
-      res.status(200).send(responseObj);
-    }
-  });
+  const dbQueries = [db.getReviewMetaRatings, db.getReviewMetaRecs, db.getReviewMetaChar];
+  const data = [];
 });
 
 app.post('/reviews', (req, res) => {
