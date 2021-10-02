@@ -101,7 +101,7 @@ const getReviewMetaChar = (params) => {
   return pool.query(psqlStatement);
 };
 
-const postReview = (callback) => {
+const postReview = (params, callback) => {
   const psqlStatement = 'SELECT NOW()';
   pool.query(psqlStatement, callback);
 };
@@ -126,79 +126,3 @@ module.exports = {
   updateReview,
   reportReview,
 };
-
-// module.exports = {
-//   query: (text, params, callback) => pool.query(text, params, callback),
-// };
-
-// const query = (text, params, callback) => {
-//   const start = Date.now();
-//   return pool.query(text, params, (err, res) => {
-//     const duration = Date.now() - start;
-//     console.log('executed query', { text, duration, rows: res.rowCount });
-//     callback(err, res);
-//   });
-// },
-
-// pool.query('SELECT NOW()', (err, res) => {
-//   console.log('pool error:', err);
-//   console.log('pool result:', res);
-//   pool.end();
-// });
-
-
-
-
-
-
-// const getReviewMetaChar = (params, callback) => {
-//   const psqlStatements = [`SELECT json_object_agg(results.name, results.json_build_object) as characteristics from
-//   (SELECT
-//   product.id as product_id,
-//   characteristics.name,
-//   json_build_object('id', characteristics.id, 'value', AVG(characteristic_reviews.value))
-//   FROM product
-//   INNER JOIN characteristics
-//   ON product.id = characteristics.product_id
-//   INNER JOIN characteristic_reviews
-//   ON characteristics.id = characteristic_reviews.characteristic_id
-//   WHERE product.id = ${params[0]}
-//   GROUP BY
-//   product.id,
-//   characteristics.id) results
-//   `,
-
-//    `SELECT json_object_agg(results.rating, results.count) as ratings from
-//   (SELECT reviews.rating,
-//   COUNT(*)
-//   FROM reviews
-//   WHERE product_id = ${params[0]}
-//   GROUP BY 1
-//   ORDER BY 1) results
-//   `,
-
-//    `
-//   SELECT
-//   sum(case when "recommend" = false then 1 else 0 end) AS false,
-//   sum(case when "recommend" = true then 1 else 0 end) AS true
-//   FROM product
-//   INNER JOIN reviews
-//   ON product.id = reviews.product_id
-//   WHERE product.id = ${params[0]}
-//   `];
-
-//   const data = []
-// pool.query(psqlStatements[0])
-// .then((result) => {
-//   data.push(result.rows);
-//   pool.query(psqlStatements[1])
-// })
-// .then((result) => {
-//   data.push(result.rows);
-//   pool.query(psqlStatements[2])
-// })
-// .then((result) => {
-//   data.push(result.rows);
-//   console.log(data)
-// })
-// };

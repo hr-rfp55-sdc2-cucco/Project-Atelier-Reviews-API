@@ -23,7 +23,7 @@ app.get('/reviews', (req, res) => {
   const page = Number.parseInt(req.query.page, 10) || 1;
   const count = Number.parseInt(req.query.count, 10) || 5;
 
-  const params = {
+  const paramsObj = {
     productId,
     sort,
     page,
@@ -31,17 +31,17 @@ app.get('/reviews', (req, res) => {
   };
   // console.log('reviews params,', params);
 
-  db.getReviews(params, (err, result) => {
+  db.getReviews(paramsObj, (err, result) => {
     if (err) {
       res.status(404).send(err);
     } else {
-      const responseObj = {
+      const reviews = {
         product: productId,
         page,
         count,
         results: result.rows,
       };
-      res.status(200).send(responseObj);
+      res.status(200).send(reviews);
     }
   });
 });
@@ -50,8 +50,8 @@ app.get('/reviews/meta', (req, res) => {
   const productId = req.query.product_id;
   const params = [Number.parseInt(productId, 10)];
   Promise.all([db.getReviewMetaRatings(params),
-    db.getReviewMetaRecs(params),
-    db.getReviewMetaChar(params)])
+  db.getReviewMetaRecs(params),
+  db.getReviewMetaChar(params)])
     .then((result) => {
       // console.log('result', result[0].rows, result[1].rows, result[2].rows);
       const reviewMeta = {
@@ -69,24 +69,35 @@ app.get('/reviews/meta', (req, res) => {
 });
 
 app.post('/reviews', (req, res) => {
-  const productId = req.query.product_id;
-  const rating = req.query.rating;
+  console.log('post reviews req.query', req.query);
+  const productId = Number.parseInt(req.query.product_id, 10);
+  const rating = Number.parseInt(req.query.rating, 10);
   const summary = req.query.summary;
   const body = req.query.body;
-  const recommend = req.query.recommend;
+  const recommend = JSON.parse(req.query.recommend);
   const name = req.query.name;
   const email = req.query.email;
-  const photos = req.query.photos || [];
-  const characteristics = req.query.characteristics;
-  const reviewsParams = [productId, rating, summary, body,
-    recommend, name, email, photos, characteristics];
-  db.postReview(reviewsParams, (err, result) => {
-    if (err) {
-      res.status(404).send(err);
-    } else {
-      res.status(201).send(result.rows);
-    }
-  });
+  const photos = JSON.parse(req.query.photos) || [];
+  const characteristics = JSON.parse(req.query.characteristics) || {};
+  const paramsObj = {
+    productId,
+    rating,
+    summary,
+    body,
+    recommend,
+    name,
+    email,
+    photos,
+    characteristics,
+  };
+  // console.log('post reviews paramsObj', paramsObj);
+  // db.postReview(reviewsParams, (err, result) => {
+  //   if (err) {
+  //     res.status(404).send(err);
+  //   } else {
+  //     res.status(201).send(result.rows);
+  //   }
+  // });
 });
 
 app.put('/reviews/:review_id/helpful', (req, res) => {
