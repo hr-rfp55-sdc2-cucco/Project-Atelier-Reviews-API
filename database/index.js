@@ -13,22 +13,35 @@ const getHome = (callback) => {
 };
 
 const getReviews = (params, callback) => {
-  console.log(params);
-  const psqlStatement = 'SELECT ';
+  console.log('getReviews params:', params);
+  const psqlStatement = `SELECT
+  reviews.id as review_id,
+  reviews.rating,
+  reviews.summary,
+  reviews.recommend,
+  reviews.body,
+  to_char(reviews.date at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as date,
+  reviews.reviewer_name,
+  reviews.helpfulness,
+  JSON_AGG(json_build_object('id', reviews_photos.id, 'url', reviews_photos.url)) as photos
+  FROM reviews
+  LEFT JOIN reviews_photos
+  ON reviews.id = reviews_photos.review_id
+  WHERE reviews.product_id = ${params[3]}
+  GROUP BY reviews.id
+  ORDER BY date DESC`;
   pool.query(psqlStatement, callback);
 };
 
 const getReviewMeta = (params, callback) => {
   const psqlStatement = `SELECT
-  product.id,
   reviews.rating,
   COUNT(*)
-  FROM product
-  INNER JOIN reviews
-  ON product.id = reviews.product_id
-  WHERE product.id = ${params[0]}
-  GROUP BY 1,2
-  ORDER BY 1,2`;
+  FROM reviews
+  WHERE product_id = ${params[0]}
+  GROUP BY 1
+  ORDER BY 1
+  `;
   pool.query(psqlStatement, callback);
 };
 
