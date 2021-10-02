@@ -17,23 +17,31 @@ app.get('/', (req, res) => {
 });
 
 app.get('/reviews', (req, res) => {
-  console.log(req.query);
-  const page = req.query.page || 1;
-  const count = req.query.count || 5;
-  const sort = req.query.sort || 'id';
+  // console.log('reviews req.query,', req.query);
   const productId = req.query.product_id;
-  const params = [page, count, sort, productId];
+  const sort = req.query.sort || 'relevant';
+  const page = Number.parseInt(req.query.page, 10) || 1;
+  const count = Number.parseInt(req.query.count, 10) || 5;
+
+  const params = {
+    productId,
+    sort,
+    page,
+    count,
+  };
+  // console.log('reviews params,', params);
+
   db.getReviews(params, (err, result) => {
     if (err) {
       res.status(404).send(err);
     } else {
-      // const responseObj = {
-      //   product: productId,
-      //   page: 0,
-      //   count: 100,
-      //   results: result.rows,
-      // };
-      res.status(200).send(result.rows);
+      const responseObj = {
+        product: productId,
+        page,
+        count,
+        results: result.rows,
+      };
+      res.status(200).send(responseObj);
     }
   });
 });

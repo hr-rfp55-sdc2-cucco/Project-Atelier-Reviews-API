@@ -13,25 +13,46 @@ const getHome = (callback) => {
 };
 
 const getReviews = (params, callback) => {
-  console.log('getReviews params:', params);
+  // console.log('getReviews params:', params);
+
+  const sortOptions = { helpful: 'helpfulness', newest: 'date', relevant: 'review_id' };
+  const sortMethod = sortOptions[params.sort];
+  const skipRows = (params.page - 1) * params.count;
+  const countRows = params.count;
+  const queryParams = [params.productId, sortMethod, skipRows, countRows];
+
+  // console.log('getReviews queryParams:', queryParams);
+
   const psqlStatement = `SELECT
-  reviews.id as review_id,
+  reviews.id AS review_id,
   reviews.rating,
   reviews.summary,
   reviews.recommend,
-  reviews.response,
+  CASE WHEN reviews.response = 'null' THEN NULL ELSE reviews.response END as response,
   reviews.body,
-  to_char(reviews.date at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as date,
+  reviews.date,
   reviews.reviewer_name,
   reviews.helpfulness,
-  JSON_AGG(json_build_object('id', reviews_photos.id, 'url', reviews_photos.url)) as photos
+  COALESCE(
+    JSON_AGG(
+      json_build_object(
+        'id', reviews_photos.id,
+        'url', reviews_photos.url)
+      ORDER BY reviews_photos.id ASC
+      )
+    FILTER (WHERE reviews_photos.id IS NOT NULL)
+    , '[]')
+    AS photos
   FROM reviews
   LEFT JOIN reviews_photos
   ON reviews.id = reviews_photos.review_id
-  WHERE reviews.product_id = ${params[3]}
+  WHERE reviews.product_id = $1
   GROUP BY reviews.id
-  ORDER BY date DESC`;
-  pool.query(psqlStatement, callback);
+  ORDER BY $2 DESC
+  OFFSET $3 ROWS
+  FETCH NEXT $4 ROWS ONLY
+  `;
+  pool.query(psqlStatement, queryParams, callback);
 };
 
 const getReviewMetaRatings = (params) => {
