@@ -70,17 +70,16 @@ app.get('/reviews/meta', (req, res) => {
 
 app.post('/reviews', (req, res) => {
   // console.log('post reviews req.body', req.body);
-  // What if we don't supply photos or characteristics?
   if (!req.body) {
     res.status(422).send('Error: Must supply body parameters');
   }
-  db.postReview(req.body, (err, result) => {
-    if (err) {
-      res.status(404).send(`Error: Could not add the given review. Data received: ${err}`);
-    } else {
+  db.postReview(req.body)
+    .then(() => {
       res.status(201).send('Success: Review added.');
-    }
-  });
+    })
+    .catch((err) => {
+      res.status(404).send(`Error: Could not add the given review. Data received: ${err}`);
+    });
 });
 
 app.put('/reviews/:review_id/helpful', (req, res) => {

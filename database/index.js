@@ -85,18 +85,22 @@ const getReviewMetaRecs = (params) => {
 };
 
 const getReviewMetaChar = (params) => {
-  const psqlStatement = `SELECT json_object_agg(results.name, results.json_build_object) AS characteristics FROM
+  const psqlStatement = `SELECT
+  json_object_agg(results.name, results.json_build_object) AS characteristics FROM
   (SELECT
   characteristics.product_id as product_id,
   characteristics.name,
-  json_build_object('id', characteristics.id, 'value', to_char(AVG(characteristic_reviews.value), 'FM9.0000000000000000'))
+   json_build_object(
+     'id', MAX(characteristics.id),
+     'value', to_char(AVG(characteristic_reviews.value), 'FM9.0000000000000000')
+   )
   FROM characteristics
   INNER JOIN characteristic_reviews
   ON characteristics.id = characteristic_reviews.characteristic_id
   WHERE characteristics.product_id = ${params[0]}
   GROUP BY
   characteristics.product_id,
-  characteristics.id) results
+  characteristics.name) results
   `;
   return pool.query(psqlStatement);
 };
@@ -104,7 +108,7 @@ const getReviewMetaChar = (params) => {
 const postReviewPhotos = (reviewId, photos) => {
   // console.log('photos', photos);
   if (photos === undefined || photos.length === 0) {
-    return;
+    return null;
   }
   const photosSQL = photos.map((url, index) => {
     if (index === photos.length - 1) {
@@ -118,13 +122,36 @@ const postReviewPhotos = (reviewId, photos) => {
   VALUES ${photosSQL};`;
   // console.log('psqlStatement', psqlStatement);
 
-  pool.query(psqlStatement);
+  return pool.query(psqlStatement);
 };
 
-const postReviewChars = (productId, reviewId, characteristics) => {
+const postReviewCharReviews = (reviewId, characteristicEntries, characteristicIds) => {
+  // console.log('reviewId', reviewId);
+  // console.log('characteristicEntries', characteristicEntries);
+  // console.log('characteristicIds', characteristicIds);
+
+  const characteristicReviewsSQL = characteristicEntries.map((characteristic, index) => {
+    if (index === characteristicEntries.length - 1) {
+      return `(${characteristicIds[index].id}, ${reviewId}, ${characteristic[1]})`;
+    }
+    return `(${characteristicIds[index].id}, ${reviewId}, ${characteristic[1]}), `;
+  }).join(' ');
+  // console.log('characteristicReviewsSQL', characteristicReviewsSQL);
+
+  const psqlStatement = `INSERT INTO
+  characteristic_reviews (characteristic_id, review_id, value)
+  VALUES ${characteristicReviewsSQL}
+  RETURNING id
+  `;
+  // console.log(psqlStatement);
+
+  return pool.query(psqlStatement);
+};
+
+const postReviewCharacteristics = (productId, reviewId, characteristics) => {
   // console.log('productId', productId);
   // console.log('reviewId', reviewId);
-  console.log('characteristics', characteristics);
+  // console.log('characteristics', characteristics);
   const characteristicOptions = [
     'Width',
     'Quality',
@@ -133,19 +160,20 @@ const postReviewChars = (productId, reviewId, characteristics) => {
     'Length',
     'Size',
   ];
+
   if (characteristics === undefined
     || Object.values(characteristics).length === 0
     || Object.values(characteristics).length > characteristicOptions.length) {
-    return;
+    return null;
   }
 
-  const characteristicsEntries = Object.entries(characteristics);
-  console.log(characteristicsEntries);
-  const characteristicsSQL = characteristicsEntries.map((characteristic, index) => {
+  const characteristicEntries = Object.entries(characteristics);
+  // console.log('characteristicEntries', characteristicEntries);
+  const characteristicsSQL = characteristicEntries.map((characteristic, index) => {
     // Pick a random characteristic, ensuring no duplicates
     const randomIndex = Math.floor(Math.random() * characteristicOptions.length);
     const randomCharacteristic = characteristicOptions.splice(randomIndex, 1)[0];
-    if (index === characteristicsEntries.length - 1) {
+    if (index === characteristicEntries.length - 1) {
       return `(${productId}, '${randomCharacteristic}')`;
     }
     return `(${productId}, '${randomCharacteristic}'), `;
@@ -156,20 +184,11 @@ const postReviewChars = (productId, reviewId, characteristics) => {
   const psqlStatement = `INSERT INTO
   characteristics (product_id, name)
   VALUES ${characteristicsSQL}
+  RETURNING id
   `;
-  console.log(psqlStatement);
-  pool.query(psqlStatement);
-
-  // const charEntries = Object.entries(characteristics);
-  // const mapCharsToSQL = charEntries.map((char, index) => {
-  //   if (index === charEntries.length - 1) {
-  //     return `(${char[0]}, ${reviewId}, ${char[1]})`;
-  //   }
-  //   return `(${char[0]}, ${reviewId}, ${char[1]}), `;
-  // }).join(' ');
-  // const query = `INSERT into characteristic_reviews (characteristic_id, review_id, value)
-  // VALUES ${mapCharsToSQL};`;
-  // return db.query(query);
+  // console.log(psqlStatement);
+  return pool.query(psqlStatement)
+    .then((result) => postReviewCharReviews(reviewId, characteristicEntries, result.rows));
 };
 
 const postReview = (params) => {
@@ -190,14 +209,12 @@ const postReview = (params) => {
   RETURNING id
   `;
   // console.log(psqlStatementArray);
-  pool.query(psqlStatementArray, paramsArray)
+  return pool.query(psqlStatementArray, paramsArray)
     .then((result) => {
       const reviewId = result.rows[0].id;
-      postReviewPhotos(reviewId, params.photos);
-      return reviewId;
-    })
-    .then((reviewId) => {
-      postReviewChars(params.product_id, reviewId, params.characteristics);
+      return Promise.all([postReviewPhotos(reviewId, params.photos),
+        postReviewCharacteristics(params.product_id, reviewId, params.characteristics),
+      ]);
     });
 };
 
