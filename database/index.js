@@ -158,6 +158,7 @@ const postReviewChars = (productId, reviewId, characteristics) => {
   VALUES ${characteristicsSQL}
   `;
   console.log(psqlStatement);
+  pool.query(psqlStatement);
 
   // const charEntries = Object.entries(characteristics);
   // const mapCharsToSQL = charEntries.map((char, index) => {
