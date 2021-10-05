@@ -84,9 +84,7 @@ app.post('/reviews', (req, res) => {
 
 app.put('/reviews/:review_id/helpful', (req, res) => {
   const reviewId = req.params.review_id;
-  // const reviewId = req.query.review_id;
-  const reviewsParams = [reviewId];
-  db.updateReview(reviewsParams, (err, result) => {
+  db.markHelpful(reviewId, (err, result) => {
     if (err) {
       res.status(404).send(`Error: Could not mark the review as helpful. Data received: ${err}`);
     } else {

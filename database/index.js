@@ -218,8 +218,14 @@ const postReview = (params) => {
     });
 };
 
-const updateReview = (callback) => {
-  const psqlStatement = 'SELECT NOW()';
+const markHelpful = (reviewId, callback) => {
+  const psqlStatement = `UPDATE reviews
+  SET "helpfulness" = CASE
+    WHEN helpfulness IS NULL THEN 1
+    ELSE helpfulness + 1
+    END
+  WHERE id = ${reviewId}
+  `;
   pool.query(psqlStatement, callback);
 };
 
@@ -235,6 +241,6 @@ module.exports = {
   getReviewMetaRecs,
   getReviewMetaRatings,
   postReview,
-  updateReview,
+  markHelpful,
   reportReview,
 };
