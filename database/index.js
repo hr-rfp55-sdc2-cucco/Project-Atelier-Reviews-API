@@ -45,8 +45,9 @@ const getReviews = (params, callback) => {
     AS photos
   FROM reviews
   LEFT JOIN reviews_photos
-  ON reviews.id = reviews_photos.review_id
+    ON reviews.id = reviews_photos.review_id
   WHERE reviews.product_id = $1
+    AND reviews.reported = false
   GROUP BY reviews.id
   ORDER BY $2 DESC
   OFFSET $3 ROWS
