@@ -49,9 +49,10 @@ app.get('/reviews', (req, res) => {
 app.get('/reviews/meta', (req, res) => {
   const productId = req.query.product_id;
   const params = [Number.parseInt(productId, 10)];
-  Promise.all([db.getReviewMetaRatings(params),
-  db.getReviewMetaRecs(params),
-  db.getReviewMetaChar(params)])
+  Promise.all([
+    db.getReviewMetaRatings(params),
+    db.getReviewMetaRecs(params),
+    db.getReviewMetaChar(params)])
     .then((result) => {
       // console.log('result', result[0].rows, result[1].rows, result[2].rows);
       const reviewMeta = {
@@ -84,26 +85,24 @@ app.post('/reviews', (req, res) => {
 
 app.put('/reviews/:review_id/helpful', (req, res) => {
   const reviewId = req.params.review_id;
-  db.markHelpful(reviewId, (err, result) => {
-    if (err) {
-      res.status(404).send(`Error: Could not mark the review as helpful. Data received: ${err}`);
-    } else {
+  db.markHelpful(reviewId)
+    .then((result) => {
       res.status(204).send(`Success: Review ${reviewId} marked as helpful. Data received: ${result.rows}`);
-    }
-  });
+    })
+    .catch(() => {
+      res.status(404).send('An error occurred. If this error persists, contact your instruction team.');
+    });
 });
 
 app.put('/reviews/:review_id/report', (req, res) => {
   const reviewId = req.params.review_id;
-  // const reviewId = req.query.review_id;
-  const reviewsParams = [reviewId];
-  db.reportReview(reviewsParams, (err, result) => {
-    if (err) {
-      res.status(404).send(`Error: Could not report the review. Data received: ${err}`);
-    } else {
+  db.reportReview(reviewId)
+    .then((result) => {
       res.status(204).send(`Success: Review ${reviewId} reported. Data received: ${result.rows}`);
-    }
-  });
+    })
+    .catch(() => {
+      res.status(404).send('An error occurred. If this error persists, contact your instruction team.');
+    });
 });
 
 app.listen(port, () => {

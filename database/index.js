@@ -212,26 +212,46 @@ const postReview = (params) => {
   return pool.query(psqlStatementArray, paramsArray)
     .then((result) => {
       const reviewId = result.rows[0].id;
-      return Promise.all([postReviewPhotos(reviewId, params.photos),
+      return Promise.all([
+        postReviewPhotos(reviewId, params.photos),
         postReviewCharacteristics(params.product_id, reviewId, params.characteristics),
       ]);
     });
 };
 
-const markHelpful = (reviewId, callback) => {
+const markHelpful = (reviewId) => {
   const psqlStatement = `UPDATE reviews
   SET "helpfulness" = CASE
     WHEN helpfulness IS NULL THEN 1
     ELSE helpfulness + 1
     END
   WHERE id = ${reviewId}
+  RETURNING id
   `;
-  pool.query(psqlStatement, callback);
+  return pool.query(psqlStatement)
+    .then((result) => {
+      // If no rows were updated, the row doesn't exist
+      if (result.rows.length === 0) {
+        throw new Error('Error: Could not mark the review as helpful.');
+      }
+      return result;
+    });
 };
 
-const reportReview = (callback) => {
-  const psqlStatement = 'SELECT NOW()';
-  pool.query(psqlStatement, callback);
+const reportReview = (reviewId) => {
+  const psqlStatement = `UPDATE reviews
+  SET "reported" = true
+  WHERE id = ${reviewId}
+  RETURNING id
+  `;
+  return pool.query(psqlStatement)
+    .then((result) => {
+      // If no rows were updated, the row doesn't exist
+      if (result.rows.length === 0) {
+        throw new Error('Error: Could not report the review.');
+      }
+      return result;
+    });
 };
 
 module.exports = {
