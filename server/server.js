@@ -23,27 +23,31 @@ app.get('/reviews', (req, res) => {
   const page = Number.parseInt(req.query.page, 10) || 1;
   const count = Number.parseInt(req.query.count, 10) || 5;
 
-  const paramsObj = {
-    productId,
-    sort,
-    page,
-    count,
-  };
-  // console.log('reviews params,', params);
+  if (Number.isNaN(Number.parseInt(productId, 10))) {
+    res.status(404).send('Error: invalid product_id provided');
+  } else {
+    const paramsObj = {
+      productId,
+      sort,
+      page,
+      count,
+    };
+    // console.log('reviews params,', params);
 
-  db.getReviews(paramsObj, (err, result) => {
-    if (err) {
-      res.status(404).send(`Error: Could not retrieve reviews. Data received: ${err}`);
-    } else {
-      const reviews = {
-        product: productId,
-        page,
-        count,
-        results: result.rows,
-      };
-      res.status(200).send(reviews);
-    }
-  });
+    db.getReviews(paramsObj, (err, result) => {
+      if (err) {
+        res.status(404).send(`Error: Could not retrieve reviews. Data received: ${err}`);
+      } else {
+        const reviews = {
+          product: productId,
+          page,
+          count,
+          results: result.rows,
+        };
+        res.status(200).send(reviews);
+      }
+    });
+  }
 });
 
 app.get('/reviews/meta', (req, res) => {
