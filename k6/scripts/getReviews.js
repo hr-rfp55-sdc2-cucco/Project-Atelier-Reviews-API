@@ -1,10 +1,17 @@
 import http from 'k6/http';
 import { sleep } from 'k6';
 
+// Low RPS
 export const options = {
-  vus: 3,
-  duration: '3s',
+  vus: 60,
+  duration: '60s',
 };
+
+// High RPS
+// export const options = {
+//   vus: 1000,
+//   duration: '3s',
+// };
 
 // Test for a random ID
 // export default function testRandomId() {

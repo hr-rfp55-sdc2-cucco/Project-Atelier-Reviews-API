@@ -15,3 +15,5 @@ a.out
 node_modules/
 
 .DS_Store
+newrelic.js
+newrelic_agent.log

@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "express": "^4.17.1",
+    "newrelic": "^8.4.0",
     "pg": "^8.7.1"
   }
 }
