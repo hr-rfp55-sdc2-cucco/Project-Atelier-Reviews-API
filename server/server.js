@@ -8,6 +8,10 @@ const port = 8080;
 
 app.use(express.json());
 
+app.get('/loaderio-3f81b9894eb31aa6b7cb9dee1999efa4', (req, res) => {
+  res.send('loaderio-3f81b9894eb31aa6b7cb9dee1999efa4');
+});
+
 app.get('/', (req, res) => {
   db.getHome((err, result) => {
     if (err) {
