@@ -1,8 +1,9 @@
 const { Pool } = require('pg');
 
 const pool = new Pool({
-  user: 'bandito',
-  host: 'localhost',
+  user: 'ubuntu',
+  password: 'password',
+  host: '3.141.164.214', // EC2 instance: SDC - Postgres Database
   database: 'sdc_reviews',
   port: 5432,
 });
