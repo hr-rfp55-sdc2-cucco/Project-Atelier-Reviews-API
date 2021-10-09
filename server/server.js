@@ -59,17 +59,15 @@ app.get('/reviews', (req, res) => {
 app.get('/reviews/meta', (req, res) => {
   const productId = req.query.product_id;
   const params = [Number.parseInt(productId, 10)];
-  Promise.all([
-    db.getReviewMetaRatings(params),
-    db.getReviewMetaRecs(params),
-    db.getReviewMetaChar(params)])
+  db.getReviewMeta(params)
     .then((result) => {
       // console.log('result', result[0].rows, result[1].rows, result[2].rows);
+      // console.log('result', result.rows);
       const reviewMeta = {
         product_id: productId,
-        ratings: result[0].rows[0].ratings,
-        recommended: result[1].rows[0].recommended,
-        characteristics: result[2].rows[0].characteristics,
+        ratings: result.rows[0].meta,
+        recommended: result.rows[1].meta,
+        characteristics: result.rows[2].meta,
       };
       res.status(200).send(reviewMeta);
     })
