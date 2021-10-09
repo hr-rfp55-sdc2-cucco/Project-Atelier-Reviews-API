@@ -57,17 +57,32 @@ app.get('/reviews', (req, res) => {
 app.get('/reviews/meta', (req, res) => {
   const productId = req.query.product_id;
   const params = [Number.parseInt(productId, 10)];
-  db.getReviewMeta(params)
+  Promise.all([
+    db.getReviewMetaRatings(params),
+    db.getReviewMetaRecs(params),
+    db.getReviewMetaChar(params)])
     .then((result) => {
       // console.log('result', result[0].rows, result[1].rows, result[2].rows);
       // console.log('result', result.rows);
-      const reviewMeta = {
-        product_id: productId,
-        ratings: result.rows[0].meta,
-        recommended: result.rows[1].meta,
-        characteristics: result.rows[2].meta,
-      };
-      res.status(200).send(reviewMeta);
+
+      // If product ID doesn't exist in ratings table, send back a response with empty objects
+      if (result[0].rows[0].ratings === null || result[1].rows[0] === undefined) {
+        const reviewMeta = {
+          product_id: productId,
+          ratings: {},
+          recommended: {},
+          characteristics: {},
+        };
+        res.status(200).send(reviewMeta);
+      } else {
+        const reviewMeta = {
+          product_id: productId,
+          ratings: result[0].rows[0].ratings,
+          recommended: result[1].rows[0].recommended,
+          characteristics: result[2].rows[0].characteristics,
+        };
+        res.status(200).send(reviewMeta);
+      }
     })
     .catch((err) => {
       // console.log('error', err);

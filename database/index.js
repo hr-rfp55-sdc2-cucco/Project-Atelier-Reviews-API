@@ -56,50 +56,52 @@ const getReviews = (params, callback) => {
   pool.query(psqlStatement, queryParams, callback);
 };
 
-const getReviewMeta = (params) => {
-  const psqlStatement = `SELECT unioned.meta FROM
-  ((SELECT
-    1 as order,
-    json_object_agg(
-      to_char(results.rating, 'FM9'),
-      to_char(results.count, 'FM9999999')) as meta
-    FROM
-    (SELECT reviews.rating,
-    COUNT(*)
-    FROM reviews
-    WHERE product_id = ${params[0]}
-    GROUP BY 1
-    ORDER BY 1) results)
-    UNION ALL
-    (SELECT
-     2 as order,
-    json_build_object(
-    'false', to_char(SUM(CASE WHEN "recommend" = false THEN 1 ELSE 0 END), 'FM9999999'),
-    'true', to_char(SUM(CASE WHEN "recommend" = true THEN 1 ELSE 0 END), 'FM9999999')
-    ) as meta
-    FROM reviews
-    WHERE reviews.product_id = ${params[0]}
-    GROUP BY reviews.product_id)
-    UNION ALL
-    (SELECT
-     3 as order,
-    json_object_agg(results.name, results.json_build_object) as meta FROM
-    (SELECT
-    characteristics.product_id as product_id,
-    characteristics.name,
-     json_build_object(
-       'id', MAX(characteristics.id),
-       'value', to_char(AVG(characteristic_reviews.value), 'FM9.0000000000000000')
-     )
-    FROM characteristics
-    INNER JOIN characteristic_reviews
-    ON characteristics.id = characteristic_reviews.characteristic_id
-    WHERE characteristics.product_id = ${params[0]}
-    GROUP BY
-    characteristics.product_id,
-    characteristics.name) results)) unioned
-    ORDER BY
-    unioned.order ASC;
+const getReviewMetaRatings = (params) => {
+  const psqlStatement = `SELECT
+  json_object_agg(
+    to_char(results.rating, 'FM9'),
+    to_char(results.count, 'FM9999999')) AS ratings
+  FROM
+  (SELECT reviews.rating,
+  COUNT(*)
+  FROM reviews
+  WHERE product_id = ${params[0]}
+  GROUP BY 1
+  ORDER BY 1) results
+  `;
+  return pool.query(psqlStatement);
+};
+
+const getReviewMetaRecs = (params) => {
+  const psqlStatement = `SELECT
+  json_build_object(
+  'false', to_char(SUM(CASE WHEN "recommend" = false THEN 1 ELSE 0 END), 'FM9999999'),
+  'true', to_char(SUM(CASE WHEN "recommend" = true THEN 1 ELSE 0 END), 'FM9999999')
+  ) AS recommended
+  FROM reviews
+  WHERE reviews.product_id = ${params[0]}
+  GROUP BY reviews.product_id
+  `;
+  return pool.query(psqlStatement);
+};
+
+const getReviewMetaChar = (params) => {
+  const psqlStatement = `SELECT
+  json_object_agg(results.name, results.json_build_object) AS characteristics FROM
+  (SELECT
+  characteristics.product_id as product_id,
+  characteristics.name,
+   json_build_object(
+     'id', MAX(characteristics.id),
+     'value', to_char(AVG(characteristic_reviews.value), 'FM9.0000000000000000')
+   )
+  FROM characteristics
+  INNER JOIN characteristic_reviews
+  ON characteristics.id = characteristic_reviews.characteristic_id
+  WHERE characteristics.product_id = ${params[0]}
+  GROUP BY
+  characteristics.product_id,
+  characteristics.name) results
   `;
   return pool.query(psqlStatement);
 };
@@ -256,7 +258,9 @@ const reportReview = (reviewId) => {
 module.exports = {
   getHome,
   getReviews,
-  getReviewMeta,
+  getReviewMetaChar,
+  getReviewMetaRecs,
+  getReviewMetaRatings,
   postReview,
   markHelpful,
   reportReview,
