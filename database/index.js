@@ -13,15 +13,11 @@ const getHome = (callback) => {
 };
 
 const getReviews = (params, callback) => {
-  // console.log('getReviews params:', params);
-
   const sortOptions = { helpful: 'helpfulness', newest: 'date', relevant: 'review_id' };
   const sortMethod = sortOptions[params.sort];
   const skipRows = (params.page - 1) * params.count;
   const countRows = params.count;
   const queryParams = [params.productId, sortMethod, skipRows, countRows];
-
-  // console.log('getReviews queryParams:', queryParams);
 
   const psqlStatement = `SELECT
   reviews.id AS review_id,
@@ -53,6 +49,7 @@ const getReviews = (params, callback) => {
   OFFSET $3 ROWS
   FETCH NEXT $4 ROWS ONLY
   `;
+
   pool.query(psqlStatement, queryParams, callback);
 };
 
@@ -69,6 +66,7 @@ const getReviewMetaRatings = (params) => {
   GROUP BY 1
   ORDER BY 1) results
   `;
+
   return pool.query(psqlStatement);
 };
 
@@ -82,6 +80,7 @@ const getReviewMetaRecs = (params) => {
   WHERE reviews.product_id = ${params[0]}
   GROUP BY reviews.product_id
   `;
+
   return pool.query(psqlStatement);
 };
 
@@ -103,56 +102,47 @@ const getReviewMetaChar = (params) => {
   characteristics.product_id,
   characteristics.name) results
   `;
+
   return pool.query(psqlStatement);
 };
 
 const postReviewPhotos = (reviewId, photos) => {
-  // console.log('photos', photos);
   if (photos === undefined || photos.length === 0) {
     return null;
   }
+
   const photosSQL = photos.map((url, index) => {
     if (index === photos.length - 1) {
       return `(${reviewId}, '${url}')`;
     }
     return `(${reviewId}, '${url}'), `;
   }).join(' ');
-  // console.log('photosSQL', photosSQL);
+
   const psqlStatement = `INSERT INTO
   reviews_photos (review_id, url)
   VALUES ${photosSQL};`;
-  // console.log('psqlStatement', psqlStatement);
 
   return pool.query(psqlStatement);
 };
 
 const postReviewCharReviews = (reviewId, characteristicEntries, characteristicIds) => {
-  // console.log('reviewId', reviewId);
-  // console.log('characteristicEntries', characteristicEntries);
-  // console.log('characteristicIds', characteristicIds);
-
   const characteristicReviewsSQL = characteristicEntries.map((characteristic, index) => {
     if (index === characteristicEntries.length - 1) {
       return `(${characteristicIds[index].id}, ${reviewId}, ${characteristic[1]})`;
     }
     return `(${characteristicIds[index].id}, ${reviewId}, ${characteristic[1]}), `;
   }).join(' ');
-  // console.log('characteristicReviewsSQL', characteristicReviewsSQL);
 
   const psqlStatement = `INSERT INTO
   characteristic_reviews (characteristic_id, review_id, value)
   VALUES ${characteristicReviewsSQL}
   RETURNING id
   `;
-  // console.log(psqlStatement);
 
   return pool.query(psqlStatement);
 };
 
 const postReviewCharacteristics = (productId, reviewId, characteristics) => {
-  // console.log('productId', productId);
-  // console.log('reviewId', reviewId);
-  // console.log('characteristics', characteristics);
   const characteristicOptions = [
     'Width',
     'Quality',
@@ -169,9 +159,9 @@ const postReviewCharacteristics = (productId, reviewId, characteristics) => {
   }
 
   const characteristicEntries = Object.entries(characteristics);
-  // console.log('characteristicEntries', characteristicEntries);
   const characteristicsSQL = characteristicEntries.map((characteristic, index) => {
-    // Pick a random characteristic, ensuring no duplicates
+    // Pick a random characteristic to populate, ensuring no duplicates
+    // (Because the API specification given doesn't make sense!)
     const randomIndex = Math.floor(Math.random() * characteristicOptions.length);
     const randomCharacteristic = characteristicOptions.splice(randomIndex, 1)[0];
     if (index === characteristicEntries.length - 1) {
@@ -180,20 +170,17 @@ const postReviewCharacteristics = (productId, reviewId, characteristics) => {
     return `(${productId}, '${randomCharacteristic}'), `;
   }).join(' ');
 
-  // console.log('characteristicsSQL', characteristicsSQL);
-
   const psqlStatement = `INSERT INTO
   characteristics (product_id, name)
   VALUES ${characteristicsSQL}
   RETURNING id
   `;
-  // console.log(psqlStatement);
+
   return pool.query(psqlStatement)
     .then((result) => postReviewCharReviews(reviewId, characteristicEntries, result.rows));
 };
 
 const postReview = (params) => {
-  // console.log('postReview params', params);
   const paramsArray = [
     params.product_id,
     params.rating,
@@ -203,13 +190,13 @@ const postReview = (params) => {
     params.name,
     params.email,
   ];
-  // console.log(paramsArray);
+
   const psqlStatementArray = `INSERT INTO
   reviews (product_id, rating, date, summary, body, recommend, reported, reviewer_name, reviewer_email, response, helpfulness)
   VALUES ($1, $2, NOW(), $3, $4, $5, false, $6, $7, null, 0)
   RETURNING id
   `;
-  // console.log(psqlStatementArray);
+
   return pool.query(psqlStatementArray, paramsArray)
     .then((result) => {
       const reviewId = result.rows[0].id;
@@ -229,6 +216,7 @@ const markHelpful = (reviewId) => {
   WHERE id = ${reviewId}
   RETURNING id
   `;
+
   return pool.query(psqlStatement)
     .then((result) => {
       // If no rows were updated, the row doesn't exist
@@ -245,6 +233,7 @@ const reportReview = (reviewId) => {
   WHERE id = ${reviewId}
   RETURNING id
   `;
+
   return pool.query(psqlStatement)
     .then((result) => {
       // If no rows were updated, the row doesn't exist

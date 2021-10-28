@@ -23,7 +23,6 @@ app.get('/', (req, res) => {
 });
 
 app.get('/reviews', (req, res) => {
-  // console.log('reviews req.query,', req.query);
   const productId = req.query.product_id;
   const sort = req.query.sort || 'relevant';
   const page = Number.parseInt(req.query.page, 10) || 1;
@@ -38,7 +37,6 @@ app.get('/reviews', (req, res) => {
       page,
       count,
     };
-    // console.log('reviews params,', params);
 
     db.getReviews(paramsObj, (err, result) => {
       if (err) {
@@ -64,9 +62,6 @@ app.get('/reviews/meta', (req, res) => {
     db.getReviewMetaRecs(params),
     db.getReviewMetaChar(params)])
     .then((result) => {
-      // console.log('result', result[0].rows, result[1].rows, result[2].rows);
-      // console.log('result', result.rows);
-
       // If product ID doesn't exist in ratings table, send back a response with empty objects
       if (result[0].rows[0].ratings === null || result[1].rows[0] === undefined) {
         const reviewMeta = {
@@ -87,13 +82,11 @@ app.get('/reviews/meta', (req, res) => {
       }
     })
     .catch((err) => {
-      // console.log('error', err);
       res.status(404).send(`Error: Could not retrieve review metadata. Data received: ${err}`);
     });
 });
 
 app.post('/reviews', (req, res) => {
-  // console.log('post reviews req.body', req.body);
   if (!req.body) {
     res.status(422).send('Error: Must supply body parameters');
   }
